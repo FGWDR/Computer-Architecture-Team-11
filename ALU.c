@@ -7,10 +7,11 @@
 const int M_SIZE = 1024;//메모리 사이즈
 unsigned char MEM[1024];//M_SIZE를 넣었더니 "상수값" 없다는 에러가 떠서 1024로 숫자를 대신 넣음
 unsigned int IR;//Instruction Register
+#include"MIPS.h"
 
 unsigned int invertEndian(unsigned int inVal);//little->big endian으로 변환
 void memoryWrite(unsigned int addr, unsigned int data);//메모리에 작성
-unsigned int memoryRead(unsigned int addr);////메모리 읽기
+unsigned int ALU(unsigned int inst, unsigned int PC);////메모리 읽기
 
 int main(void)
 {
@@ -28,18 +29,23 @@ int main(void)
     printf("Number of instructions: %d  ",invertEndian(buffer[0]));
     printf("Number of data: %d\n", invertEndian(buffer[1]));
     int num=invertEndian(buffer[0]);
+//unsigned int RegAccess(int A, unsigned int V, unsigned int nRW);// A: memory Address ,V:write value, nRW: 0->Read, 1->Write
+//unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S);
+//A: memory Address , V:write value, nRW: 0->Read, 1->Write, S(size): 0->Byte, 1->Half word, 2->Word
+//void viewRegister(void);
+//void viewMemory(unsigned int start, unsigned int end);
     for(int i = 2;i<2+num;i++)
     {
-        memoryWrite(buffer[i],i);
+        MemAccess(buffer[i], i, 1, 2);
     }
+    int PC=0;//program counter
     for(int i = 2;i<2+num;i++)
     {
-        memoryRead(buffer[i]);
+        //PC++; jump 명령어들을 고려해 PC++은 ALU안에 넣기로함
+        MemAccess(buffer[i], i, 0, 2);
+        MEM[i]=buffer[i];
+        ALU(buffer[i], PC);
     }
-    /*for(int i=2;i<num+2;i++)
-    {
-        printf("%x\n",MEM[i]);
-    }*/
     fclose(fp);
     return 0;
 }
@@ -50,25 +56,10 @@ unsigned int invertEndian(unsigned int inVal)//little to big endian
     return inVal;
 }
 
-void memoryWrite(unsigned int addr, unsigned int data)
+unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
 {
-    addr=invertEndian(addr);
-    MEM[data-2]=((char *)&addr,sizeof(addr));
-}
-
-unsigned int memoryRead(unsigned int addr)//0xaabbccdd
-{
-    unsigned int IR=addr; //instruction register
-    IR=((IR<<24)&0xff000000)|((IR<<8)&0x00ff0000)|((IR>>8)&0x0000ff00)|((IR>>24)&0x000000ff);//big -> little
+    unsigned int IR=invertEndian(inst);//big -> little
     unsigned int opcode=IR>>26;
-    //unsigned int funct=IR&0x0000003f;
-    //printf("Opc: %8x, Fct: %8x, ",opcode, funct);
-    //-------------------------------------------
-    //opand와 funct의 이진수 앞세자리와 뒤세자리 분리(원래 Instruction Encoding을 2차원 배열로 만들어 찾을려고 시도했음)
-    //unsigned int opcodeCol=opcode>>3;
-    //unsigned int opcodeRow=opcode&0x7;
-    //unsigned int functCol=funct<<3;
-    //unsigned int functRow=funct&0x7;
     //-------------------------------------------
     if(opcode==0)//R 명령어
     {
@@ -79,12 +70,14 @@ unsigned int memoryRead(unsigned int addr)//0xaabbccdd
         unsigned int funct = IR & 0x3f;//0011 1111
         switch(funct)
         {
-            //shift operations---------------------
+            //shift operations-----------------------------
             case 0://sll: rt=start, rd=dest, shamt=amount
                 MEM[rd]=(MEM[rt]<<shamt) & 0xffffffff;
+                PC+=4;
                 break;
             case 2://srl: 
                 MEM[rd] = (MEM[rt] >> shamt) & 0xffffffff;
+                PC+=4;
                 break;
             case 3://sra: MSB 복사, 나머지 오른쪽으로 shift
                 unsigned int MSB= MEM[rt] & 0x80000000;//0,1
@@ -94,41 +87,58 @@ unsigned int memoryRead(unsigned int addr)//0xaabbccdd
                     temp = (MEM[rt] >> 1) + MSB;
                 }
                 MEM[rd]=temp;
+                PC+=4;
                 break;
             //
-            case 8://Jump register
-                printf("Inst: jr\n");
+            case 8://Jump register: jr $ra
+                unsigned int ra = IR >> 21;
+                PC=ra;
                 break;
             case 12://syscall
                 printf("Inst: syscall\n");
+                PC+=4;
                 break;
             case 16://mfhi rd: Move from Hi
-                printf("Inst: mfhi\n");
+                unsigned int rd = (IR>>11) & 0x1f;
+                rd = RegAccess(HI, hi, 0);
+                PC+=4;
                 break;
             case 18://mflo rd: Move from Lo
-                printf("Inst: mflo\n");
+                unsigned int rd = (IR>>11) & 0x1f;
+                rd = RegAccess(LO, lo, 0);
+                PC+=4;
                 break;
-            case 24://mult: multiply rs,rt
-                printf("Inst: mult\n");
+            case 24://mult: multiply rs,rt: MULT rs, rt; HI:LO = rs * rt (signed)
+                unsigned int hi=(rs*rt)>>32;//64bit중 상위 32bit
+                unsigned int lo=(rs*rt) & 0xffffffff;//64bit중 하위 32bit
+                RegAccess(HI, hi, 1);
+                RegAccess(LO, lo, 1);
+                PC+=4;
                 break;
                 //--------------------------
             case 32://add rd = rs + rt
                 MEM[rd]=MEM[rs] + MEM[rt];
+                PC+=4;
                 break;
             case 34://sub
                 MEM[rd] = MEM[rs] - MEM[rt];
+                PC+=4;
                 break;
             case 36://and
                 MEM[rd] = MEM[rs] & MEM[rt];
+                PC+=4;
                 break;
             case 37:// or
                 MEM[rd] = MEM[rs] | MEM[rt];
+                PC+=4;
                 break;
             case 38://xor
                 MEM[rd] = MEM[rs] ^ MEM[rt];
+                PC+=4;
                 break;
             case 39://nor
                 MEM[rd] = ~(MEM[rs] | MEM[rt]);
+                PC+=4;
                 break;
             case 42://slt: set less than: if(rs<rt) rd = 1; else rd = 0;
                 if(rs<rt)
@@ -139,6 +149,7 @@ unsigned int memoryRead(unsigned int addr)//0xaabbccdd
                 {
                     rd=0;
                 }
+                PC+=4;
                 break;
             default:// default
                 break;
@@ -154,61 +165,119 @@ unsigned int memoryRead(unsigned int addr)//0xaabbccdd
         {
             case 0://R-format
                 printf("Inst: R-format\n");
+                PC+=4;
                 break;
             case 1://bltz rs,L: branch less than 0
-                printf("Inst: bltz\n");
-                break;
-            case 2://j L: jump-> address+4 : program counter
                 unsigned int address = IR & 0x03ffffff;
+                unsigned int L=(PC<<28)|address<<2;
+                unsigned int rs = (IR >> 21) & 0x0000001f;
+                if(MEM[rs] < 0)
+                {
+                    ALU(L,PC);
+                }
+                break;
+            case 2://j L: jump-> address00+4 : program counter
+                unsigned int address = IR & 0x03ffffff;
+                unsigned int L=(PC<<28)|address<<2;
+                //다음 처리될 명령어는 L이 되어야한다.
+                PC++;
+                ALU(L, PC);
                 break;
             case 3://jal L: jump and link
-                printf("Inst: jal\n");
+                unsigned int address = IR & 0x03ffffff;
+                unsigned int L=(PC<<28)|address<<2;
+                RegAccess(L,ALU(L, PC), 1);//다음 주소값 명령어를 레지스터에 저장
                 break;
             case 4://beq rs, rt, L: branch equal
-                printf("Inst: beq\n");
+                unsigned int address = IR & 0x03ffffff;
+                unsigned int L=(PC<<28)|address<<2;
+                if(MEM[rt] == MEM[rs])
+                {
+                    RegAccess(L, ALU(L, PC), 1);
+                }
+                else
+                {
+                    PC+=4;
+                }
                 break;
             case 5://bne rs, rt, L: Branch not equal
-                printf("Inst: bne\n");
+                unsigned int address = IR & 0x03ffffff;
+                unsigned int L=(PC<<28)|address<<2;
+                if(MEM[rt] != MEM[rs])
+                {
+                    RegAccess(L, ALU(L, PC), 1);
+                }
+                else
+                {
+                    PC+=4;
+                }
                 break;
             case 8://addi rt,rs, imm: ADD immediate
                 MEM[rt]=MEM[rs] + conAdd;
+                PC+=4;
                 break;
             case 10://slti rd,rs, imm: set less than immediate
                 if(rs< conAdd)
                 {
-                    rt = 1;
+                    MemAccess(rt, 1, 1, 2);//$s1=1
                 }
                 else
                 {
-                    rt=0;
+                    MemAccess(rt, 0, 1, 2);//$s1=0
                 }
+                PC+=4;
                 break;
             case 12:// andi rt, rs, imm: AND immediate
-                printf("Inst: andi\n");
+                unsigned int imm = IR & 0xffff;
+                MEM[rt] = MEM[rs] & imm;
+                MemAccess(rt, MEM[rt], 1, 2);
+                PC+=4;
                 break;
             case 13://ori rt, rs, imm: OR immediate
-                printf("Inst: ori\n");
+                unsigned int imm = IR & 0xffff;
+                MEM[rt] = MEM[rs] | imm;
+                MemAccess(rt, MEM[rt], 1, 2);
+                PC+=4;
                 break;
             case 14://xor rt, rs, imm: XOR immediate
-                printf("Inst: xori\n");
+                unsigned int imm = IR & 0xffff;
+                MEM[rt] = MEM[rs] ^ imm;
+                MemAccess(rt, MEM[rt], 1, 2);
+                PC+=4;
                 break;
-            case 15:// lui rt, imm: load upper immediate
-                printf("Inst: lui\n");
+            case 15:// lui rt, imm: load upper immediate// 상위 16bit에 imm값 넣고 뒤 16bit는 0으로 둔다.
+                unsigned int rt = IR & 0xffff0000;
+                unsigned int imm = (IR & 0xffff) << 16;
+                MemAccess(rt, imm, 1, 2);
+                PC+=4;
                 break;
             case 32://lb rt, imm(rs): load byte
-                printf("Inst: lb\n");
+                unsigned imm = IR & 0xffff;//offset
+                RegAccess(rt, MemAccess(rs, imm, 0, 0), 1);
+                PC+=4;
                 break;
             case 35://lw rt, imm(rs): load word
-                printf("Inst: lw\n");
+                unsigned imm = IR & 0xffff;//offset
+                RegAccess(rt, MemAccess(rs, imm, 0, 2), 1);
+                PC+=4;
                 break;
             case 36://lbu rt, imm(rs): load byte unsigned
-                printf("Inst: lbu\n");
+                unsigned imm = IR & 0xffff;//offset
+                RegAccess(rt, MemAccess(rs, -imm, 0, 0), 1);
+                PC+=4;
                 break;
-            case 40://sb rt, imm(rs): store byte
-                printf("Inst: sb\n");
+            case 40://sb rt, imm(rs): store byte/ reg->mem
+                unsigned imm = IR & 0xffff;//offset
+                MemAccess(rt, RegAccess(rs, imm, 0), 1, 0);
+                PC+=4;
+                break;
             case 43://sw rt, im(rs): store word
-                printf("Inst: sw\n");
+                unsigned imm = IR & 0xffff;//offset
+                MemAccess(rt, RegAccess(rs, imm, 0), 1, 2);
+                PC+=4;
+                break;
             default:
+                PC+=4;
                 break;
         }
     }
