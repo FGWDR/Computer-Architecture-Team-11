@@ -1,6 +1,7 @@
-#ifndef HEADER_H
-#   define HEADER_H
-#   include <stdio.h>
+#ifndef INTERFACE_H_
+#   define INTERFACE_H_
+#   include "MIPS.h"
+#   include "ALU.h"
 #   define TRUE    1
 #   define FALSE   0
 
@@ -27,11 +28,8 @@ int loadProgram(FILE *filePointer);
 void jumpProgram(unsigned int startPosition);
 void step(void);
 void goProgram(void);
-void viewMemory(unsigned int start,unsigned int end);
-void viewRegister(void);
 void setRegister(int regNum,int value);
 void setMemory(unsigned int location,int value);
-unsigned int invertEndian(unsigned int inputValue);
 int interface(void);
 
 #endif
