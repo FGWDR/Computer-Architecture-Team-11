@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define REG_SIZE 32
 #include <stdio.h>
 #include <windows.h>
 #include <stdlib.h>
@@ -7,13 +8,18 @@
 #include "MIPS.h"
 
 static unsigned char progMEM[0x100000], dataMEM[0x100000], stackMEM[0x100000];
-static unsigned int reg[32] = { 0, }; //¿œπ› ∑π¡ˆΩ∫≈Õ
-static unsigned int PC, HI, LO;  //PC, HI ∑π¡ˆΩ∫≈Õ, LO ∑π¡ˆΩ∫≈Õ
+static unsigned int reg[REG_SIZE] //ÏùºÎ∞ò Î†àÏßÄÏä§ÌÑ∞
+static unsigned int PC, HI, LO;  //PC, HI Î†àÏßÄÏä§ÌÑ∞, LO Î†àÏßÄÏä§ÌÑ∞
 
-//∑π¡ˆΩ∫≈Õ
+//Î†àÏßÄÏä§ÌÑ∞
 unsigned int RegAccess(int A, unsigned int V, unsigned int nRW) {
     // A: memory Address ,V:write value, nRW: 0->Read, 1->Write
 
+    if (A > 31) {
+		printf("Invalid register\n");
+		return 1;
+	}
+    
     if (nRW == 0)//read
         return reg[A];
 
@@ -21,23 +27,23 @@ unsigned int RegAccess(int A, unsigned int V, unsigned int nRW) {
         return reg[A] = V;
 
     else {
-        printf("nRW01\n");
+        printf("Invalid nRW \n");
         fflush(stdout);
     }
 
     return 0;
 }
 
-//∏ﬁ∏∏Æ
+//Î©îÎ™®Î¶¨
 unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S) {
     //A: memory Address , V:write value, nRW: 0->Read, 1->Write, S(size): 0->Byte, 1->Half word, 2->Word
 
-    unsigned int sel, offset; //∏ﬁ∏∏Æ ¡¢±Ÿ ∫Øºˆ
-    unsigned char* pM = NULL; //∏ﬁ∏∏Æ ∆˜¿Œ≈Õ
-    unsigned int R; //π›»Ø ∞™
+    unsigned int sel, offset; //Î©îÎ™®Î¶¨ Ï†ëÍ∑º Î≥ÄÏàò
+    unsigned char* pM = NULL; //Î©îÎ™®Î¶¨ Ìè¨Ïù∏ÌÑ∞
+    unsigned int R; //Î∞òÌôò Í∞í
 
-    sel = A >> 20; //∏ﬁ∏∏Æ Ω√¿€¡° 
-    offset = A & 0xFFFFF; //∏ﬁ∏∏Æ ¡÷º“
+    sel = A >> 20; //Î©îÎ™®Î¶¨ ÏãúÏûëÏ†ê 
+    offset = A & 0xFFFFF; //Î©îÎ™®Î¶¨ Ï£ºÏÜå
 
     // address decoding and select a physical memory
     if (sel == 0x004)      //program memory
@@ -53,68 +59,66 @@ unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S) {
     // offset processing for alignment
 
     if (S == 0) {  // byte
-        if (nRW == 0) {
+        if (nRW == 0) { //read
             V = pM[offset];
             return V;
         }
-        else if (nRW == 1) {
+        else if (nRW == 1) { //write
             pM[offset] = V & 0xff;
             return V;
         }
     }
     else if (S == 1) { // half word
-        if (nRW == 0) {
+        if (nRW == 0) { //read
             V = (pM[offset]) | (pM[offset + 1] << 8);
             return V;
         }
-        else if (nRW == 1) {
+        else if (nRW == 1) { //write
             pM[offset] = V & 0x00ff;
             pM[offset + 1] = (V & 0xff00) >> 8;
             return V;
         }
     }
     else if (S == 2) { // word
-        if (nRW == 0) {
+        if (nRW == 0) { //read
             V = pM[offset] | (pM[offset + 1] << 8) | (pM[offset + 2] << 16) | (pM[offset + 3] << 24);
             return V;
         }
-        else if (nRW == 1) {
-            pM[offset] = V & 0x000000ff;
-            pM[offset + 1] = (V & 0x0000ff00) >> 8;
-            pM[offset + 2] = (V & 0x00ff0000) >> 16;
-            pM[offset + 3] = (V & 0xff000000) >> 24;
+        else if (nRW == 1) { //write
+            pM[offset] = V & 0x000000ff; pM[offset + 1] = (V & 0x0000ff00) >> 8; pM[offset + 2] = (V & 0x00ff0000) >> 16; pM[offset + 3] = (V & 0xff000000) >> 24;
             return V;
         }
     }
-    else {
+    else { // error
         printf("memeory access size error");
         return 0;
-    } // error
+    } 
 
     return 0;
 }
 
-//∑π¡ˆΩ∫≈Õ View
+//Î†àÏßÄÏä§ÌÑ∞ View
 void ViewRegister(void) {
     char* r[32] = { "r0","at","v0","v1","a0","a1","a2","a3","t0","t1","t2","t3","t4","t5","t6","t7","s0","s1","s2","s3","s4","s5","s6","s7","t8","t9","k0","k1","gp","sp","fp","ra" };
 
-    printf("---- REGISTER ----\n");
-    printf("PC : %08X\n", PC);
-    printf("HI : %08X\n", HI);
-    printf("LO : %08X\n", LO);
-    fflush(stdout);
+    printf("[REGISTER[\n");
 
     for (int i = 0; i < 32; i++)
         printf("R%02d [%s] = %X\n", i, r[i], reg[i]);
     fflush(stdout);
     printf("\n");
+
+    printf("PC : %08X\n", PC);
+    printf("HI : %08X\n", HI);
+    printf("LO : %08X\n", LO);
+    fflush(stdout);
 }
 
-//∏ﬁ∏∏Æ View
+//Î©îÎ™®Î¶¨ View
 void ViewMemory(unsigned int start, unsigned int end) {
     unsigned int front, offset, e_offset;
     unsigned char* pM;
-    front = start >> 20; //æ’ 12∫Ò∆Æ
+    front = start >> 20; //Ïïû 12ÎπÑÌä∏
     offset = start & 0xFFFFF;
     e_offset = end & 0xFFFFF;
 
