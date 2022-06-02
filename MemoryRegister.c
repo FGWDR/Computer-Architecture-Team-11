@@ -11,14 +11,14 @@ static unsigned char progMEM[0x100000], dataMEM[0x100000], stackMEM[0x100000];
 static unsigned int reg[REG_SIZE] //일반 레지스터
 static unsigned int PC, HI, LO;  //PC, HI 레지스터, LO 레지스터
 
-//레지스터
+//레지스터 접근
 unsigned int RegAccess(int A, unsigned int V, unsigned int nRW) {
     // A: memory Address ,V:write value, nRW: 0->Read, 1->Write
 
     if (A > 31) {
-		printf("Invalid register\n");
-		return 1;
-	}
+	    printf("Invalid register\n");
+	    return 1;
+    }
     
     if (nRW == 0)//read
         return reg[A];
@@ -34,7 +34,7 @@ unsigned int RegAccess(int A, unsigned int V, unsigned int nRW) {
     return 0;
 }
 
-//메모리
+//메모리 
 unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S) {
     //A: memory Address , V:write value, nRW: 0->Read, 1->Write, S(size): 0->Byte, 1->Half word, 2->Word
 
