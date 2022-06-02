@@ -6,8 +6,8 @@
 #include <string.h>
 #include <math.h>
 
-//¸Ş¸ğ¸®
-//·¹Áö½ºÅÍ
+//ë©”ëª¨ë¦¬
+//ë ˆì§€ìŠ¤í„°
 
 union instructionRegister { // 32bit
 	unsigned int I;
@@ -46,7 +46,7 @@ union instructionRegister { // 32bit
 	} B;
 }IR; //IR: instruction register
 
-struct control_signal { //opcode·Î ¸¸µç control #°¢ ºÎºĞ¿¡¼­ signalÀ» »ç¿ëÇÑ´Ù
+struct control_signal { //opcodeë¡œ ë§Œë“  control #ê° ë¶€ë¶„ì—ì„œ signalì„ ì‚¬ìš©í•œë‹¤
 	unsigned int RegDst : 1;
 	unsigned int Jump : 1;
 	unsigned int ALUSrc : 1;
@@ -61,8 +61,8 @@ struct control_signal { //opcode·Î ¸¸µç control #°¢ ºÎºĞ¿¡¼­ signalÀ» »ç¿ëÇÑ´Ù
 
 unsigned int RegAccess(int A, unsigned int V, unsigned int nRW);
 unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S);
-void viewRegister(void);
-void viewMemory(unsigned int start, unsigned int end);
+void PrintRegister(void);
+void PrintMemory(unsigned int start, unsigned int end);
 
-//¸Ş¸ğ¸® Á¢±Ù ÇÔ¼ö
+//ë©”ëª¨ë¦¬ ì ‘ê·¼ í•¨ìˆ˜
 #endif /* MIPS_H_ */
