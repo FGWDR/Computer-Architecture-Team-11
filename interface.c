@@ -131,7 +131,7 @@ void step(void){
 
     if(ALU(IR.I,PC)==0)    isEnd=TRUE;
     else    isEnd=FALSE;
-    ViewRegister();
+    PrintRegister();
 }
 
 /*
@@ -199,10 +199,10 @@ int interface(void){
         else if(strcmp(cmd,"m")==0 && isExecutable==TRUE){  //start ~ end 범위의 메모리 내용 출력 (Command Format: m <start> <end>)
             arg1=strtol(strtok(NULL," "),NULL,16);
             arg2=strtol(strtok(NULL," "),NULL,16);
-            ViewMemory(arg1,arg2);
+            PrintMemory(arg1,arg2);
         }
         else if(strcmp(cmd,"r")==0 && isExecutable==TRUE){  //현재 레지스터 내용 출력 (Command Format: r)
-            ViewRegister();
+            PrintRegister();
         }
         else if(strcmp(cmd,"x")==0){  //시뮬레이터 종료 (Command Format: x)
             printf("-----Simulator End-----\n");
