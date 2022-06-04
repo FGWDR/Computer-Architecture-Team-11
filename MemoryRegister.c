@@ -108,9 +108,9 @@ void PrintRegister(void) {
     fflush(stdout);
     printf("\n");
 
-    printf("PC : %08X\n", r[33]);
-    printf("HI : %08X\n", r[34]);
-    printf("LO : %08X\n", r[35]);
+    printf("PC : %08X\n", r[32]);
+    printf("HI : %08X\n", r[33]);
+    printf("LO : %08X\n", r[34]);
     fflush(stdout);
 }
 
