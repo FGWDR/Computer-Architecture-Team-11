@@ -7,7 +7,6 @@ const int M_SIZE = 1024;//메모리 사이즈
 unsigned char MEM[1024];//M_SIZE를 넣었더니 "상수값" 없다는 에러가 떠서 1024로 숫자를 대신 넣음
 unsigned int IR;//Instruction Register
 #include"MIPS.h"
-#include"interface.h"
 
 unsigned int invertEndian(unsigned int inVal);//little->big endian으로 변환
 void memoryWrite(unsigned int addr, unsigned int data);//메모리에 작성
