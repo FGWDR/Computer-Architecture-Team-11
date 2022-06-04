@@ -2,22 +2,10 @@
 #   define INTERFACE_H_
 #   include "MIPS.h"
 #   include "ALU.h"
-#   define TRUE    1
-#   define FALSE   0
+#   define TRUE      1
+#   define FALSE     0
+#   define PC_REGNUM 32
 
-union instructionRegiser{
-    unsigned int I;
-    struct RFormat{
-        unsigned int funct : 6;
-        unsigned int sh : 5;
-        unsigned int rd : 5;
-        unsigned int rt : 5;
-        unsigned int rs : 5;
-        unsigned int opcode : 6;
-    }RI;
-}IR;  //Instruction Fatch용
-
-unsigned int PC;  //Program Counter(초기값: 메모리 text영역 시작 주소)
 int isEnd;  //syscall 10을 만나면 프로그램 종료
 int isExecutable;  //프로그램 실행 가능 여부 판단
 FILE *filePointer;  //실행시킬 바이너리 파일을 위한 파일 스트림
