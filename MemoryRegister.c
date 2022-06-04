@@ -1,5 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
-#define REG_SIZE 32
+#define REG_SIZE 35
 #include <stdio.h>
 #include <windows.h>
 #include <stdlib.h>
@@ -99,7 +99,7 @@ unsigned int MemAccess(unsigned int A, unsigned int V, int nRW, int S) {
 
 //레지스터 Print
 void PrintRegister(void) {
-    char* r[32] = { "r0","at","v0","v1","a0","a1","a2","a3","t0","t1","t2","t3","t4","t5","t6","t7","s0","s1","s2","s3","s4","s5","s6","s7","t8","t9","k0","k1","gp","sp","fp","ra" };
+    char* r[35] = { "r0","at","v0","v1","a0","a1","a2","a3","t0","t1","t2","t3","t4","t5","t6","t7","s0","s1","s2","s3","s4","s5","s6","s7","t8","t9","k0","k1","gp","sp","fp","ra", "PC", "HI","LO" };
 
     printf("[REGISTER]\n");
 
@@ -108,9 +108,9 @@ void PrintRegister(void) {
     fflush(stdout);
     printf("\n");
 
-    printf("PC : %08X\n", PC);
-    printf("HI : %08X\n", HI);
-    printf("LO : %08X\n", LO);
+    printf("PC : %08X\n", r[33]);
+    printf("HI : %08X\n", r[34]);
+    printf("LO : %08X\n", r[35]);
     fflush(stdout);
 }
 
