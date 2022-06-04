@@ -121,6 +121,7 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
         unsigned int address = IR & 0x03ffffff;
         switch(opcode)
         {
+//branch 명령어-----------------------------------------------------
             case 1://bltz rs,L: branch less than 0
                 unsigned int L=(PC<<28)|address<<2;
                 if(MEM[IR.RI.rs] < 0)
@@ -161,6 +162,7 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                     RegAccess(32, PC+4, 1);
                 }
                 break;
+//immediate-------------------------------------------------------------
             case 8://addi rt,rs, imm: ADD immediate
                 MEM[IR.RI.rt]=MEM[IR.RI.rs] + conAdd;
                 RegAccess(32, PC+4, 1);
