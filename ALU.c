@@ -68,8 +68,8 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 RegAccess(32, PC+4, 1);
                 break;
             case 24://mult: multiply rs,rt: MULT rs, rt; HI:LO = rs * rt (signed)
-                unsigned int hi=(IR.RI.rs*IR.RI.rt)>>32;//64bit중 상위 32bit
-                unsigned int lo=(IR.RI.rs*IR.RI.rt) & 0xffffffff;//64bit중 하위 32bit
+                unsigned int hi=(RegAccess(IR.RI.rs,NULL,0)*RegAccess(IR.RI.rt,NULL,0))>>32;//64bit중 상위 32bit
+                unsigned int lo=(RegAccess(IR.RI.rs,NULL,0)*RegAccess(IR.RI.rt,NULL,0)) & 0xffffffff;//64bit중 하위 32bit
                 RegAccess(33, hi, 1);
                 RegAccess(34, lo, 1);
                 RegAccess(32, PC+4, 1);
