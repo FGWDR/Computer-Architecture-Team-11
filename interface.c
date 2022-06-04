@@ -90,7 +90,7 @@ void jumpProgram(unsigned int startPosition){
 
     if((startPosition>>20)==4){
         setPC(startPosition);
-        printf("PC is setted at 0x%x\n\n",RegAccess(32,NULL,0));
+        printf("PC is setted at 0x%x\n\n",RegAccess(PC_REGNUM,NULL,0));
     }
     else
         printf("Error: Worng Access!\n\n");  //PC 설정 값이 메모리 Text영역이 아니면 Error
