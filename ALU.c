@@ -121,10 +121,6 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
         unsigned int address = IR & 0x03ffffff;
         switch(opcode)
         {
-            case 0://R-format
-                printf("Inst: R-format\n");
-                RegAccess(32, PC+4, 1);
-                break;
             case 1://bltz rs,L: branch less than 0
                 unsigned int L=(PC<<28)|address<<2;
                 if(MEM[IR.RI.rs] < 0)
@@ -172,11 +168,11 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
             case 10://slti rd,rs, imm: set less than immediate
                 if(IR.RI.rs< conAdd)
                 {
-                    MemAccess(rt, 1, 1, 2);//$s1=1
+                    MemAccess(IR.RI.rt, 1, 1, 2);//$s1=1
                 }
                 else
                 {
-                    MemAccess(rt, 0, 1, 2);//$s1=0
+                    MemAccess(IR.RI.rt, 0, 1, 2);//$s1=0
                 }
                 RegAccess(32, PC+4, 1);
                 break;
