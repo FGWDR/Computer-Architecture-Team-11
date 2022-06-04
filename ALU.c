@@ -30,11 +30,11 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
         {
             //shift operations-----------------------------
             case 0://sll: rt=start, rd=dest, sh=amount
-                MEM[IR.RI.rd]=(MEM[IR.RI.rt]<<IR.RI.sh) & 0xffffffff;
+                RegAccess(IR.RI.rd,RegAccess(IR.RI.rt,NULL,0)<<IR.RI.sh,1);
                 RegAccess(32, PC+4, 1);
                 break;
             case 2://srl: 
-                MEM[IR.RI.rd] = (MEM[IR.RI.rt] >> IR.RI.sh) & 0xffffffff;
+                RegAccess(IR.RI.rd,RegAccess(IR.RI.rt,NULL,0)>>IR.RI.sh,1);
                 RegAccess(32, PC+4, 1);
                 break;
             case 3://sra: MSB 복사, 나머지 오른쪽으로 shift
@@ -68,8 +68,8 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 RegAccess(32, PC+4, 1);
                 break;
             case 24://mult: multiply rs,rt: MULT rs, rt; HI:LO = rs * rt (signed)
-                unsigned int hi=(rs*rt)>>32;//64bit중 상위 32bit
-                unsigned int lo=(rs*rt) & 0xffffffff;//64bit중 하위 32bit
+                unsigned int hi=(IR.RI.rs*IR.RI.rt)>>32;//64bit중 상위 32bit
+                unsigned int lo=(IR.RI.rs*IR.RI.rt) & 0xffffffff;//64bit중 하위 32bit
                 RegAccess(33, hi, 1);
                 RegAccess(34, lo, 1);
                 RegAccess(32, PC+4, 1);
@@ -117,9 +117,8 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
     else//opcode가 000_000이 아니므로 opcode 명령어 찾기
     {
         //I format instructions
-        unsigned int rs = (IR >> 21) & 0x0000001f;
-        unsigned int rt = (IR>>16) & 0x0000001f;
         unsigned int conAdd = IR & 0x0000ffff;
+        unsigned int address = IR & 0x03ffffff;
         switch(opcode)
         {
             case 0://R-format
@@ -127,9 +126,7 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 RegAccess(32, PC+4, 1);
                 break;
             case 1://bltz rs,L: branch less than 0
-                unsigned int address = IR & 0x03ffffff;
                 unsigned int L=(PC<<28)|address<<2;
-                unsigned int rs = (IR >> 21) & 0x0000001f;
                 if(MEM[IR.RI.rs] < 0)
                 {
                     ALU(L,PC);
@@ -137,19 +134,16 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 RegAccess(32, PC, 1);
                 break;
             case 2://j L: jump-> address00+4 : program counter
-                unsigned int address = IR & 0x03ffffff;
                 unsigned int L=(PC<<28)|address<<2;
                 //다음 처리될 명령어는 L이 되어야한다.
                 RegAccess(32, PC+4, 1);
                 ALU(L, PC);
                 break;
             case 3://jal L: jump and link
-                unsigned int address = IR & 0x03ffffff;
                 unsigned int L=(PC<<28)|address<<2;
                 RegAccess(L,ALU(L, PC), 1);//다음 주소값 명령어를 레지스터에 저장
                 break;
             case 4://beq rs, rt, L: branch equal
-                unsigned int address = IR & 0x03ffffff;
                 unsigned int L=(PC<<28)|address<<2;
                 if(MEM[IR.RI.rt] == MEM[IR.RI.rs])
                 {
@@ -161,7 +155,6 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 }
                 break;
             case 5://bne rs, rt, L: Branch not equal
-                unsigned int address = IR & 0x03ffffff;
                 unsigned int L=(PC<<28)|address<<2;
                 if(MEM[IR.RI.rt] != MEM[IR.RI.rs])
                 {
@@ -206,7 +199,6 @@ unsigned int ALU(unsigned int inst, unsigned int PC)//0xaabbccdd
                 RegAccess(32, PC+4, 1);
                 break;
             case 15:// lui rt, imm: load upper immediate// 상위 16bit에 imm값 넣고 뒤 16bit는 0으로 둔다.
-                unsigned int rt = IR & 0xffff0000;
                 unsigned int imm = (IR & 0xffff) << 16;
                 MemAccess(IR.RI.rt, imm, 1, 2);
                 RegAccess(32, PC+4, 1);
